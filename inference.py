@@ -74,6 +74,11 @@ def predict():
         "timestamp": int(time.time())
     })
 
+@app.route("/reset", methods=["POST"])
+def reset_buffer():
+    with lock:
+        sequence_buffer.clear()
+    return jsonify({"status": "buffer_cleared"})
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=6000)
