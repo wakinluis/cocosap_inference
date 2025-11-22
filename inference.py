@@ -50,6 +50,8 @@ def predict():
         if len(sequence_buffer) > SEQUENCE_LENGTH:
             sequence_buffer.pop(0)
 
+        print(f"[DEBUG] Sequence buffer length: {len(sequence_buffer)}")
+        
         # Not enough data yet
         if len(sequence_buffer) < SEQUENCE_LENGTH:
             return jsonify({
