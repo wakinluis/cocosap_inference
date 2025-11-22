@@ -9,7 +9,7 @@ import joblib
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
-MODEL_PATH = "models/model_final.keras"   # updated to .keras
+MODEL_PATH = "models/tuba_model_final.keras"   # updated to .keras
 SCALER_PATH = "scalers/feature_scalers.joblib"
 
 SEQUENCE_LENGTH = 30
