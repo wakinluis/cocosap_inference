@@ -64,9 +64,11 @@ def predict():
     # Run inference
     prediction = model.predict(input_seq, verbose=0)
     prediction_value = float(prediction.squeeze())
-
+    is_ready = 1 if prediction_value >= 0.5 else 0
+    
     return jsonify({
         "prediction": prediction_value,
+        "is_ready": is_ready,
         "timestamp": int(time.time())
     })
 
