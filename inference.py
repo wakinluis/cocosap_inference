@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import numpy as np
 import threading
 import time
@@ -6,6 +7,7 @@ import tensorflow as tf
 import joblib
 
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 MODEL_PATH = "models/model_final.tflite"
 SCALER_PATH = "scalers/feature_scalers.joblib"
