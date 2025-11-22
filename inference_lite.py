@@ -9,23 +9,28 @@ import joblib
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
-MODEL_PATH = "models/model_final.keras"   # updated to .keras
+MODEL_PATH = "models/model_final.tflite"
 SCALER_PATH = "scalers/feature_scalers.joblib"
 
 SEQUENCE_LENGTH = 30
 FEATURE_COUNT = 2  # gravity + temperature
 
-# Load scalers
+# Load scaler
 scalers = joblib.load(SCALER_PATH)
 gravity_scaler = scalers["gravity"]
 temp_scaler = scalers["temperature"]
 
-# Load Keras model
-model = tf.keras.models.load_model(MODEL_PATH)
+# Load TFLite model
+interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
+interpreter.allocate_tensors()
+
+input_index = interpreter.get_input_details()[0]["index"]
+output_index = interpreter.get_output_details()[0]["index"]
 
 # Thread-safe buffer
 lock = threading.Lock()
 sequence_buffer = []
+
 
 @app.route("/predict", methods=["POST"])
 def predict():
@@ -46,11 +51,9 @@ def predict():
     with lock:
         sequence_buffer.append([gravity_scaled, temp_scaled])
 
-        # Keep only last SEQUENCE_LENGTH readings
         if len(sequence_buffer) > SEQUENCE_LENGTH:
             sequence_buffer.pop(0)
 
-        # Not enough data yet
         if len(sequence_buffer) < SEQUENCE_LENGTH:
             return jsonify({
                 "status": "waiting_for_more_data",
@@ -59,10 +62,13 @@ def predict():
             }), 200
 
         input_seq = np.array(sequence_buffer, dtype=np.float32)
-        input_seq = np.expand_dims(input_seq, axis=0)  # shape: (1, SEQUENCE_LENGTH, FEATURE_COUNT)
+        input_seq = np.expand_dims(input_seq, axis=0)  # (1, 30, 2)
 
     # Run inference
-    prediction = model.predict(input_seq, verbose=0)
+    interpreter.set_tensor(input_index, input_seq)
+    interpreter.invoke()
+    prediction = interpreter.get_tensor(output_index)
+
     prediction_value = float(prediction.squeeze())
 
     return jsonify({
